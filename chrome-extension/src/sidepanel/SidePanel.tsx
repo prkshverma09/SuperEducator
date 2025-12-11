@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { addUrlToKnowledgeBase } from '../services/elevenLabsService';
+import { addUrlToKnowledgeBase, clearKnowledgeBase } from '../services/elevenLabsService';
 
 const SidePanel: React.FC = () => {
   const [selectedText, setSelectedText] = useState<string>('');
@@ -9,6 +9,7 @@ const SidePanel: React.FC = () => {
   const [currentUrl, setCurrentUrl] = useState<string>('');
   const [pageTitle, setPageTitle] = useState<string>('');
   const [isUploading, setIsUploading] = useState<boolean>(false);
+  const [isClearing, setIsClearing] = useState<boolean>(false);
   const [uploadStatus, setUploadStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   const getSelectedText = useCallback(async () => {
@@ -93,6 +94,27 @@ const SidePanel: React.FC = () => {
     setTimeout(() => setUploadStatus(null), 4000);
   };
 
+  const handleClearKnowledgeBase = async () => {
+    if (!confirm('Are you sure you want to clear the entire knowledge base? This cannot be undone.')) {
+      return;
+    }
+
+    setIsClearing(true);
+    setUploadStatus(null);
+
+    const result = await clearKnowledgeBase();
+
+    setIsClearing(false);
+
+    if (result.success) {
+      setUploadStatus({ type: 'success', message: 'Knowledge base cleared!' });
+    } else {
+      setUploadStatus({ type: 'error', message: result.error || 'Failed to clear' });
+    }
+
+    setTimeout(() => setUploadStatus(null), 4000);
+  };
+
   const isPdfUrl = currentUrl.toLowerCase().endsWith('.pdf') || currentUrl.includes('/pdf/');
 
   return (
@@ -117,27 +139,46 @@ const SidePanel: React.FC = () => {
             {currentUrl ? new URL(currentUrl).hostname : 'No page loaded'}
           </span>
         </div>
-        <button
-          className={`upload-btn ${isUploading ? 'uploading' : ''}`}
-          onClick={handleUploadToKnowledgeBase}
-          disabled={isUploading || !currentUrl}
-        >
-          {isUploading ? (
-            <>
+        <div className="upload-actions">
+          <button
+            className={`upload-btn ${isUploading ? 'uploading' : ''}`}
+            onClick={handleUploadToKnowledgeBase}
+            disabled={isUploading || isClearing || !currentUrl}
+          >
+            {isUploading ? (
+              <>
+                <div className="btn-spinner"></div>
+                Uploading...
+              </>
+            ) : (
+              <>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                  <polyline points="17,8 12,3 7,8"/>
+                  <line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+                Upload to Agent
+              </>
+            )}
+          </button>
+          <button
+            className={`clear-kb-btn ${isClearing ? 'clearing' : ''}`}
+            onClick={handleClearKnowledgeBase}
+            disabled={isUploading || isClearing}
+            title="Clear Knowledge Base"
+          >
+            {isClearing ? (
               <div className="btn-spinner"></div>
-              Uploading...
-            </>
-          ) : (
-            <>
+            ) : (
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
-                <polyline points="17,8 12,3 7,8"/>
-                <line x1="12" y1="3" x2="12" y2="15"/>
+                <polyline points="3,6 5,6 21,6"/>
+                <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+                <line x1="10" y1="11" x2="10" y2="17"/>
+                <line x1="14" y1="11" x2="14" y2="17"/>
               </svg>
-              Upload to Agent
-            </>
-          )}
-        </button>
+            )}
+          </button>
+        </div>
         {uploadStatus && (
           <div className={`upload-status ${uploadStatus.type}`}>
             {uploadStatus.type === 'success' ? '✓' : '✕'} {uploadStatus.message}

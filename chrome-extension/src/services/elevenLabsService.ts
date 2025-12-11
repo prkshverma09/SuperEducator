@@ -160,3 +160,50 @@ export const addUrlToKnowledgeBase = async (
     };
   }
 };
+
+export const clearKnowledgeBase = async (): Promise<{ success: boolean; error?: string }> => {
+  const apiKey = getApiKey();
+  const agentId = config.elevenLabs.agentId;
+
+  if (!apiKey) {
+    return { success: false, error: 'API key not configured. Add ELEVENLABS_API_KEY to .env file' };
+  }
+
+  if (!agentId) {
+    return { success: false, error: 'Agent ID not configured. Add ELEVENLABS_AGENT_ID to .env file' };
+  }
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/convai/agents/${agentId}`, {
+      method: 'PATCH',
+      headers: {
+        'xi-api-key': apiKey,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        conversation_config: {
+          agent: {
+            prompt: {
+              knowledge_base: [],
+            },
+          },
+        },
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      return {
+        success: false,
+        error: errorData.detail?.message || `Failed to clear knowledge base: ${response.status}`,
+      };
+    }
+
+    return { success: true };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error occurred',
+    };
+  }
+};
