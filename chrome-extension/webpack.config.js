@@ -9,6 +9,7 @@ module.exports = {
     content: './src/content/content.ts',
     background: './src/background/background.ts',
     offscreen: './src/offscreen/offscreen.ts',
+    permissions: './src/permissions/permissions.ts',
   },
   output: {
     path: path.resolve(__dirname, 'dist'),
@@ -45,10 +46,16 @@ module.exports = {
       filename: 'offscreen.html',
       chunks: ['offscreen'],
     }),
+    new HtmlWebpackPlugin({
+      template: './src/permissions/permissions.html',
+      filename: 'permissions.html',
+      chunks: ['permissions'],
+    }),
     new CopyWebpackPlugin({
       patterns: [
         { from: 'manifest.json', to: 'manifest.json' },
         { from: 'public/icons', to: 'icons', noErrorOnMissing: true },
+        { from: 'node_modules/@elevenlabs/client/worklets', to: 'worklets' },
       ],
     }),
   ],

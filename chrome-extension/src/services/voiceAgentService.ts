@@ -17,17 +17,34 @@ let conversation: Conversation | null = null;
 export const startConversation = async (
   callbacks: VoiceAgentCallbacks
 ): Promise<Conversation> => {
-  conversation = await Conversation.startSession({
-    agentId: config.elevenLabs.agentId,
-    connectionType: 'webrtc',
-    onConnect: callbacks.onConnect,
-    onDisconnect: callbacks.onDisconnect,
-    onError: callbacks.onError,
-    onStatusChange: callbacks.onStatusChange,
-    onModeChange: callbacks.onModeChange,
-  });
+  console.log('[VoiceAgentService] Starting session with agent:', config.elevenLabs.agentId);
 
-  return conversation;
+  try {
+    // Get the extension URL for self-hosted worklet files to avoid CSP blob: URL restrictions
+    const workletBasePath = chrome.runtime.getURL('worklets');
+    console.log('[VoiceAgentService] Worklet base path:', workletBasePath);
+
+    conversation = await Conversation.startSession({
+      agentId: config.elevenLabs.agentId,
+      connectionType: 'websocket',
+      // Self-host worklet files to avoid CSP blob: URL restrictions in Chrome extensions
+      workletPaths: {
+        rawAudioProcessor: `${workletBasePath}/rawAudioProcessor.js`,
+        audioConcatProcessor: `${workletBasePath}/audioConcatProcessor.js`,
+      },
+      onConnect: callbacks.onConnect,
+      onDisconnect: callbacks.onDisconnect,
+      onError: callbacks.onError,
+      onStatusChange: callbacks.onStatusChange,
+      onModeChange: callbacks.onModeChange,
+    });
+
+    console.log('[VoiceAgentService] Session started successfully');
+    return conversation;
+  } catch (error) {
+    console.error('[VoiceAgentService] Failed to start session:', error);
+    throw error;
+  }
 };
 
 export const endConversation = async (): Promise<void> => {

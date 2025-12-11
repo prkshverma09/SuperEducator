@@ -17,40 +17,50 @@ const VoiceAgent: React.FC = () => {
 
   const requestMicPermission = async (): Promise<{ granted: boolean; error?: string }> => {
     try {
+      console.log('[VoiceAgent] Requesting microphone permission...');
       const response = await chrome.runtime.sendMessage({ action: 'requestMicPermission' });
+      console.log('[VoiceAgent] Permission response:', response);
       return response;
     } catch (error) {
+      console.error('[VoiceAgent] Error requesting permission:', error);
       return { granted: false, error: error instanceof Error ? error.message : 'Failed to request permission' };
     }
   };
 
   const handleStart = useCallback(async () => {
+    console.log('[VoiceAgent] Starting conversation...');
     setStatus('connecting');
     setErrorMessage('');
 
-    // First, request microphone permission through the background script's offscreen document
+    // First, request microphone permission through the background script
     const permissionResult = await requestMicPermission();
     if (!permissionResult.granted) {
+      console.log('[VoiceAgent] Permission denied:', permissionResult.error);
       setStatus('error');
       setErrorMessage(permissionResult.error || 'Microphone permission denied');
       return;
     }
+    console.log('[VoiceAgent] Permission granted, starting ElevenLabs session...');
 
     const callbacks: VoiceAgentCallbacks = {
       onConnect: () => {
+        console.log('[VoiceAgent] Connected to agent');
         setStatus('connected');
         setAgentMode('listening');
       },
       onDisconnect: () => {
+        console.log('[VoiceAgent] Disconnected from agent');
         setStatus('idle');
         setAgentMode(null);
         setIsMuted(false);
       },
       onError: (message: string) => {
+        console.error('[VoiceAgent] Agent error:', message);
         setStatus('error');
         setErrorMessage(message || 'Connection failed');
       },
       onStatusChange: ({ status: connectionStatus }) => {
+        console.log('[VoiceAgent] Status changed:', connectionStatus);
         if (connectionStatus === 'disconnected') {
           setStatus('idle');
           setAgentMode(null);
@@ -58,13 +68,16 @@ const VoiceAgent: React.FC = () => {
         }
       },
       onModeChange: ({ mode }) => {
+        console.log('[VoiceAgent] Mode changed:', mode);
         setAgentMode(mode);
       },
     };
 
     try {
       await startConversation(callbacks);
+      console.log('[VoiceAgent] Conversation started successfully');
     } catch (error) {
+      console.error('[VoiceAgent] Failed to start conversation:', error);
       setStatus('error');
       setErrorMessage(
         error instanceof Error ? error.message : 'Failed to start conversation'
