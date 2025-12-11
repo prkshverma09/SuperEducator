@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { addUrlToKnowledgeBase, clearKnowledgeBase } from '../services/elevenLabsService';
+import VoiceAgent from './VoiceAgent';
 
 const SidePanel: React.FC = () => {
   const [selectedText, setSelectedText] = useState<string>('');
@@ -238,6 +239,8 @@ const SidePanel: React.FC = () => {
       <footer className="sidepanel-footer">
         <p>Select text anywhere on the page</p>
       </footer>
+
+      <VoiceAgent />
     </div>
   );
 };
