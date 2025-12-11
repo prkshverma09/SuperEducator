@@ -2,8 +2,8 @@
   "manifest_version": 3,
   "name": "Text Selection Reader",
   "version": "1.0.0",
-  "description": "Read and display selected text from any webpage",
-  "permissions": ["activeTab", "scripting", "sidePanel"],
+  "description": "Read and display selected text from any webpage and upload to ElevenLabs",
+  "permissions": ["activeTab", "scripting", "sidePanel", "tabs"],
   "action": {
     "default_title": "Open Text Reader"
   },
